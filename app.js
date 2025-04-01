@@ -14,16 +14,6 @@ const port = 3000;
 app.use(cors());
 app.use(express.json());
 
-function getSupabaseClientWithToken(accessToken) {
-  return createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY, {
-    global: {
-      headers: {
-        Authorization: `Bearer ${accessToken}`
-      }
-    }
-  });
-}
-
 const server = http.createServer(app)
 const io = new Server(server,{
   cors: {
@@ -78,22 +68,19 @@ app.post("/signin", async (req,res) => {
 
 app.get("/history", async (req, res) => {
   const token = req.headers.authorization?.split(' ')[1];
-
   if (!token) return res.status(401).json({ error: 'Token ausente' });
-
-  const supabase = getSupabaseClientWithToken(token);
-
-  const { user, error } = await supabase.auth.getUser();
+    
+  const { data: user, error } = await supabase.auth.getUser(token);
   if (error || !user) return res.status(401).json({ error: 'Token inválido' });
-  const { data, error1 } = await supabase
-  .rpc('ultima_mensagem_por_chat', { user_uuid: user.id });
+  const { data: chat, error1 } = await supabase
+  .rpc('ultima_mensagem_por_chat', { user_uuid: user.user.id });
 
   if (error1) {
     console.error('❌ Erro ao buscar mensagens:', error);
     return res.status(500).json({ error: error.message });
   }
 
-  res.json(data);
+  res.json(chat);
 });
 
 app.get("/chat", async (req, res) => {
