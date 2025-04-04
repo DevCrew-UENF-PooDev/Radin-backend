@@ -6,8 +6,8 @@ import cookieParser from 'cookie-parser';
 import { expressjwt } from 'express-jwt';
 import dotenv from 'dotenv';
 
-import authRoutes from './routes/auth';
-import messageRoutes from './routes/message';
+import authRoutes from './routes/auth.routes';
+import messageRoutes from './routes/message.routes';
 
 dotenv.config();
 

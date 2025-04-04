@@ -56,3 +56,18 @@ export const register = async (req: Request, res: Response) => {
 
   res.status(201).json({message: "Usuário criado! Verifique o email"});
 };
+
+export const profile = async (req: Request, res: Response) => {
+  try {
+    const userId = req.user.sub;
+    if (!userId) return res.status(401).json({ error: "Usuário não autenticado" });
+    
+    const { data, error } = await supabase.from("profiles").select("*").eq("id", userId).single();
+
+    if (error) return res.status(400).json({ error: error.message });
+
+    res.status(200).json({ user: data });
+  } catch (error) {
+    res.status(500).json({ error: "Erro ao buscar informações do usuário" });
+  }
+};

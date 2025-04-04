@@ -10,9 +10,8 @@ const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_AN
 export const sendMessage = async (req: Request, res: Response) => {
   try {
     const { text, chatId } = req.body;
-    const senderId = req.user.id;
+    const senderId = req.user.sub;
     const encryptedText = encryptMessage(text);
-    
     const { data, error } = await supabase
       .from('messages')
       .insert([{ text: encryptedText, sender_id: senderId, chat_id: chatId }]);

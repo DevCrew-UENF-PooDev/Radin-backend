@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { sendMessage } from '../controllers/messageController';
+import { sendMessage } from '../controllers/messages.controller';
 import dotenv from 'dotenv';
 import { asyncHandler } from '../utils/asyncHandler';
 
