@@ -10,7 +10,7 @@ export const login = async (req: Request, res: Response) => {
 
   res.cookie('access_token', accessToken, {
     httpOnly: true,         // Acessível apenas pelo servidor, protegendo contra XSS
-    secure: false,          // Em produção, defina como true (HTTPS obrigatório)
+    secure: process.env.NODE_ENV === "production",  // (HTTPS obrigatório)
     sameSite: 'lax',        // Pode ajustar conforme necessário (lax, strict ou none)
     maxAge: 1000 * 60 * 60,   // 1 hora de validade
   });
@@ -63,5 +63,23 @@ export const profile = async (req: Request, res: Response) => {
     res.status(200).json({ user: data });
   } catch (error) {
     res.status(500).json({ error: "Erro ao buscar informações do usuário" });
+  }
+};
+
+export const logout = async (req: Request, res: Response) => {
+  try {
+    const accessToken = req.cookies?.access_token;
+
+    if (accessToken) await supabase.auth.signOut();
+    
+    res.clearCookie("access_token", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+    });
+
+    return res.status(200).json({ message: "Logout realizado com sucesso!" });
+  } catch (error) {
+    return res.status(500).json({ error: "Erro ao realizar logout." });
   }
 };
