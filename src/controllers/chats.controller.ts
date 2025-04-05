@@ -53,8 +53,7 @@ export const listUserChats = async (req: Request, res: Response) => {
         .from("messages")
         .select("*")
         .eq("chat_id", chat.id)
-        .order("created_at", { ascending: false })
-        .limit(1);
+        .order("created_at", { ascending: true });
       if (messageError) throw messageError;
 
       return {

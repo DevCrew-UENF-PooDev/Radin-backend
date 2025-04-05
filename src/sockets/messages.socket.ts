@@ -45,7 +45,7 @@ export const handleMessages = (socket: Socket, io: Server) => {
   });
 
   // Usuário recebe a mensagem
-  socket.on('messageDelivered', async ({ messageId, chatId }) => {
+  socket.on('messageDelivered', async ({ messageId }) => {
     // atualiza delivered_at
     await supabase
       .from('message_status')
@@ -57,7 +57,7 @@ export const handleMessages = (socket: Socket, io: Server) => {
       .from('message_status')
       .select('user_id', { count: 'exact' })
       .eq('message_id', messageId)
-      .neq('delivered_at', null);
+      .not('delivered_at', 'is', null);
 
     // conta total de recipients
     const { count: totalCount } = await supabase
@@ -67,42 +67,43 @@ export const handleMessages = (socket: Socket, io: Server) => {
 
     // se todo mundo recebeu, marca o tick na messages e emite
     if (deliveredCount === totalCount) {
-      const { data: m } = await supabase
+      const { error: err, data: m } = await supabase
         .from('messages')
         .update({ tick: 'delivered' })
         .eq('id', messageId).select().single();
-      if(m) io.to(`user:${m.sender_id}`).emit('tickUpdated', { chatId, messageId, tick: 'delivered' });
+      if(err) return console.error(err);
+      io.to(`user:${m.sender_id}`).emit('tickUpdated', { msg: m, tick: 'delivered', tempMessageId: '' });
     }
   });
 
   // Cliente leu a mensagem
-  socket.on('messageRead', async ({ messageId, chatId }) => {
-    // atualiza read_at
-    await supabase
-      .from('message_status')
-      .update({ read_at: new Date().toISOString() })
-      .match({ message_id: messageId, userId });
+  socket.on('messageRead', async ({ messageId }) => {
+    await supabase.rpc('update_message_status_timestamps', {
+      msg_id: messageId,
+      usr_id: userId,
+      now: new Date().toISOString()
+    });
 
     // conta quantos confirmaram read
     const { count: readCount } = await supabase
       .from('message_status')
       .select('user_id', { count: 'exact' })
       .eq('message_id', messageId)
-      .neq('read_at', null);
-
-    // total de recipients
+      .not('read_at', 'is', null);
+      
     const { count: totalCount } = await supabase
       .from('message_status')
       .select('user_id', { count: 'exact' })
       .eq('message_id', messageId);
-
+      
     // se todo mundo leu, marca o tick e emite
     if (readCount === totalCount) {
-      const { data: m } = await supabase
+      const { error: err, data: m } = await supabase
         .from('messages')
         .update({ tick: 'read' })
         .eq('id', messageId).select().single();
-      io.to(`user:${m.sender_id}`).emit('tickUpdated', { chatId, messageId, tick: 'read' });
+      if(err) return console.error(err);
+      io.to(`user:${m.sender_id}`).emit('tickUpdated', { msg: m, tick: 'read', tempMessageId: '' });
     }
   });
   
