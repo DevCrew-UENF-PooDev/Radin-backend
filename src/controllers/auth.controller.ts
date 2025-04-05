@@ -8,6 +8,14 @@ export const login = async (req: Request, res: Response) => {
   
   const accessToken = data.session.access_token;
 
+  const { data: profile, error: profileError } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('id', data.user.id)
+    .single();
+
+  if (profileError) return res.status(500).json({ error: profileError.message });
+
   res.cookie('access_token', accessToken, {
     httpOnly: true,         // Acessível apenas pelo servidor, protegendo contra XSS
     secure: process.env.NODE_ENV === "production",  // (HTTPS obrigatório)
@@ -17,7 +25,7 @@ export const login = async (req: Request, res: Response) => {
 
   res.status(200).json({
     message: "Login realizado!",
-    user: data.user,
+    user: { id: profile.id, username: profile.username, artwork: profile.artwork},
     access_token: accessToken,
     refresh_token: data.session.refresh_token
   });
