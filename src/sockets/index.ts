@@ -1,10 +1,15 @@
 import { Server } from "socket.io";
 import { handlePresence } from "./presence.socket";
 import { handleMessages } from "./messages.socket";
+import dotenv from 'dotenv';
+
+dotenv.config();
+
+const origin = process.env.ORIGIN || 'http://localhost:9000';
 
 export const initSocket = (server: any) => {
   const io = new Server(server, {
-    cors: { origin: 'http://localhost:9000', methods: ["GET", "POST"]}
+    cors: { origin: origin, methods: ["GET", "POST"]}
   });
 
   io.on("connection", socket => {
