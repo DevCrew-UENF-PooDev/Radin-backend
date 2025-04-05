@@ -2,7 +2,7 @@
   "name": "radin",
   "version": "1.0.0",
   "description": "",
-  "main": "/src/server.ts",
+  "main": "dist/server.js",
   "scripts": {
     "build": "tsc",
     "start": "node dist/server.js",
