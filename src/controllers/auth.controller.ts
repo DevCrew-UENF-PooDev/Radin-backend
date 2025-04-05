@@ -19,7 +19,7 @@ export const login = async (req: Request, res: Response) => {
   res.cookie('access_token', accessToken, {
     httpOnly: true,         // Acessível apenas pelo servidor, protegendo contra XSS
     secure: process.env.NODE_ENV === "production",  // (HTTPS obrigatório)
-    sameSite: 'lax',        // Pode ajustar conforme necessário (lax, strict ou none)
+    sameSite: process.env.NODE_ENV === "production" ? 'none' :'lax',
     maxAge: 1000 * 60 * 60,   // 1 hora de validade
   });
 
