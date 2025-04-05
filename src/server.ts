@@ -14,10 +14,11 @@ dotenv.config();
 
 const app = express();
 const port = process.env.PORT || 3000;
+const origin = process.env.ORIGIN || 'http://localhost:9000';
 const server = http.createServer(app);
 
 app.use(cors({
-  origin: 'http://localhost:9000',
+  origin: origin,
   credentials: true
 }));
 app.use(express.json());
@@ -42,5 +43,5 @@ app.use('/api/users', userRoutes);
 app.use('/api/chats', chatRoutes);
 
 server.listen(port, () => {
-  console.log(`Servidor rodando em http://localhost:${port}`);
+  console.log(`Servidor rodando em ${origin}`);
 });
