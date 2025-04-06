@@ -74,6 +74,23 @@ export const profile = async (req: Request, res: Response) => {
   }
 };
 
+export const changeArtwork = async (req: Request, res: Response) => {
+  try {
+    const userId = req.user.sub;
+    const { artworkUrl } = req.body;
+    if (!artworkUrl) return res.status(400).json({ error: 'Forneça uma artwork' });
+    
+    const { data, error } = await supabase.from("profiles").update({artwork: artworkUrl})
+      .eq("id", userId).select("artwork").single();
+
+    if (error) return res.status(400).json({ error: error.message });
+
+    res.status(200).json({ user: data, message: 'Artwork alterada com sucesso!' });
+  } catch (error) {
+    res.status(500).json({ error: "Erro ao buscar informações do usuário" });
+  }
+}
+
 export const logout = async (req: Request, res: Response) => {
   try {
     const accessToken = req.cookies?.access_token;
