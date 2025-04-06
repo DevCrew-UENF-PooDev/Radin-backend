@@ -77,6 +77,7 @@ export const profile = async (req: Request, res: Response) => {
 export const changeArtwork = async (req: Request, res: Response) => {
   try {
     const userId = req.user.sub;
+    if (!userId) return res.status(401).json({ error: "Usuário não autenticado" });
     const { artworkUrl } = req.body;
     if (!artworkUrl) return res.status(400).json({ error: 'Forneça uma artwork' });
     

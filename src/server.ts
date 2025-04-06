@@ -7,6 +7,7 @@ import dotenv from 'dotenv';
 
 import authRoutes from './routes/auth.routes';
 import userRoutes from './routes/users.routes';
+import groupRoutes from './routes/groups.route';
 import chatRoutes from './routes/chats.route';
 import { initSocket } from './sockets';
 
@@ -40,6 +41,7 @@ initSocket(server);
 // Rotas
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/groups', groupRoutes);
 app.use('/api/chats', chatRoutes);
 
 server.listen(port, () => {
