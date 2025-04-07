@@ -3,6 +3,7 @@ import { Request, Response } from 'express';
 import supabase from '../lib/supabaseClient';
 import { getOnlineStatus } from '../utils/status';
 import { enrichChat } from '../utils/enrichChat';
+import { decryptMessage } from '../utils/crypto';
 
 
 export const listUserChats = async (req: Request, res: Response) => {
@@ -56,6 +57,8 @@ export const listUserChats = async (req: Request, res: Response) => {
         .order("created_at", { ascending: true });
       if (messageError) throw messageError;
 
+      for (const msg of lastMessageData) msg.text = decryptMessage(msg.text);
+      
       return {
         ...chat,
         members,
@@ -126,4 +129,56 @@ export const createPrivateChat = async (req: Request, res: Response) => {
   } catch (error) {
     return res.status(500).json({ error: "Erro ao criar chat privado" });
   }
+};
+
+
+export const syncChats = async (req: Request, res: Response) => {
+  const userId = req.user.sub;
+  const chats = req.body.chats;
+
+  if (!userId || !Array.isArray(chats)) return res.status(400).json({ error: "Requisição inválida" });
+
+  const allNewMessages: Record<string, any[]> = {};
+
+  for (const chat of chats) {
+    const { chat_id, lastMessageDate } = chat;
+
+    const { data, error } = await supabase
+      .from("messages")
+      .select(`
+        id,
+        chat_id,
+        sender_id,
+        text,
+        tick,
+        created_at,
+        attachments,
+        profiles:sender_id (
+          username,
+          artwork
+        )
+      `)
+      .eq("chat_id", chat_id)
+      .gt("created_at", lastMessageDate)
+      .order("created_at", { ascending: true });
+
+    if (error) {
+      console.warn(`Erro ao buscar mensagens do chat ${chat_id}`);
+      continue;
+    }
+
+    allNewMessages[chat_id] = (data || []).map((msg: any) => ({
+      id: msg.id,
+      chat_id: msg.chat_id,
+      sender_id: msg.sender_id,
+      username: msg.profiles?.username ?? "Unknown",
+      artwork: msg.profiles?.artwork ?? null,
+      text: decryptMessage(msg.text),
+      tick: msg.tick,
+      attachments: msg.attachments,
+      created_at: msg.created_at,
+    }));
+  }
+
+  res.status(200).json({ messages: allNewMessages, message: "Novas mensagens recebidas" });
 };

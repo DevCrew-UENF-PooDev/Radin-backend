@@ -1,5 +1,6 @@
 import { Server, Socket } from "socket.io";
 import supabase from "../lib/supabaseClient";
+import { decryptMessage, encryptMessage } from "../utils/crypto";
 // import { encryptMessage } from "../utils/crypto";
 
 export const handleMessages = (socket: Socket, io: Server) => {
@@ -11,7 +12,7 @@ export const handleMessages = (socket: Socket, io: Server) => {
   // Cliente envia a mensagem
   socket.on('sendMessage', async ({ chatId, text, tempMessageId }) => {
     // 1. insere a mensagem com tick 'sent'
-    const encryptedText = text;//encryptMessage(text);
+    const encryptedText = encryptMessage(text);//text;//encryptMessage(text);
     const { data: msg, error: msgErr } = await supabase
       .from('messages')
       .insert([{ chat_id: chatId, sender_id: userId, text: encryptedText, tick: 'sent' }])
@@ -37,7 +38,8 @@ export const handleMessages = (socket: Socket, io: Server) => {
         .from('message_status')
         .insert(statusRows);
       if (statusErr) return console.error(statusErr);
-
+      
+      msg.text = decryptMessage(msg.text);
       // 4. emite a nova mensagem e o tick 'sent'
       io.to(`chat:${chatId}`).emit('newMessage', {msg, tempMessageId});
       io.to(`user:${userId}`).emit('tickUpdated', { msg, tick: 'sent', tempMessageId });
@@ -72,6 +74,7 @@ export const handleMessages = (socket: Socket, io: Server) => {
         .update({ tick: 'delivered' })
         .eq('id', messageId).select().single();
       if(err) return console.error(err);
+      m.text = decryptMessage(m.text);
       io.to(`user:${m.sender_id}`).emit('tickUpdated', { msg: m, tick: 'delivered', tempMessageId: '' });
     }
   });
@@ -103,6 +106,7 @@ export const handleMessages = (socket: Socket, io: Server) => {
         .update({ tick: 'read' })
         .eq('id', messageId).select().single();
       if(err) return console.error(err);
+      m.text = decryptMessage(m.text);
       io.to(`user:${m.sender_id}`).emit('tickUpdated', { msg: m, tick: 'read', tempMessageId: '' });
     }
   });
